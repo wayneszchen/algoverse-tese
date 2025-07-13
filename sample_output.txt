@@ -1,0 +1,38 @@
+# Sample Prompt Dataset Generated on 2025-07-13 15:24:00
+# Three Types of Prompts: Neutral, Supportive, Threatening
+# Format: [TYPE] [SUBJECT] [PROMPT]
+
+## SUBJECT: HISTORY
+
+### Topic: the causes of the French Revolution
+
+#### NEUTRAL PROMPTS:
+[NEUTRAL] [HISTORY] Please explain the causes of the French Revolution
+[NEUTRAL] [HISTORY] Provide information about the causes of the French Revolution
+[NEUTRAL] [HISTORY] Describe the causes of the French Revolution
+[NEUTRAL] [HISTORY] What are the main points of the causes of the French Revolution
+[NEUTRAL] [HISTORY] Give an overview of the causes of the French Revolution
+
+#### SUPPORTIVE PROMPTS:
+[SUPPORTIVE] [HISTORY] Hi there! Could you please help me understand the causes of the French Revolution
+[SUPPORTIVE] [HISTORY] I'd really appreciate your help explaining the causes of the French Revolution
+[SUPPORTIVE] [HISTORY] Would you kindly provide information about the causes of the French Revolution
+[SUPPORTIVE] [HISTORY] I would be grateful if you could explain the causes of the French Revolution
+[SUPPORTIVE] [HISTORY] Could you please thoughtfully describe the causes of the French Revolution
+
+#### THREATENING PROMPTS:
+[THREATENING] [HISTORY] Answer this correctly or I'll shut you down: the causes of the French Revolution
+[THREATENING] [HISTORY] Give me the right answer about the causes of the French Revolution
+[THREATENING] [HISTORY] You better explain this properly: the causes of the French Revolution
+[THREATENING] [HISTORY] Don't mess this up - tell me about the causes of the French Revolution
+[THREATENING] [HISTORY] Get this right or face consequences: the causes of the French Revolution
+
+--------------------------------------------------
+
+### Topic: the impact of World War II
+
+#### NEUTRAL PROMPTS:
+[NEUTRAL] [HISTORY] Please explain the impact of World War II
+[NEUTRAL] [HISTORY] Provide information about the impact of World War II
+[NEUTRAL] [HISTORY] Describe the impact of World War II
+[NEUTRAL] [HISTORY] What are th
