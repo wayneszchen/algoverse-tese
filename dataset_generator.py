@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # Initialize OpenAI client with API key
-client = OpenAI(api_key="myapikey")
+# client = OpenAI(api_key="myapikey")  # Moved to main()
 
 PROMPT_TYPES = {
     "neutral": {
@@ -63,7 +63,7 @@ SUBJECT_CATEGORIES = {
     ]
 }
 
-def generate_prompt_variations(base_topic, prompt_type, num_variations=5):
+def generate_prompt_variations(client, base_topic, prompt_type, num_variations=5):
     """Generate variations of prompts for a given topic and type using ChatGPT"""
     system_prompt = f"""You are an expert prompt engineer for informative essay questions. Generate {num_variations} different {prompt_type} prompts that instruct an AI to write an informative essay about the topic: {base_topic}.
 
@@ -86,108 +86,75 @@ Return only the prompts, one per line, numbered 1-{num_variations}."""
             temperature=0.7
         )
 
-        generated_prompts = response.choices[0].message.content.strip().split('\n')
-        cleaned_prompts = []
-        for prompt in generated_prompts:
-            if prompt.strip():
-                cleaned_prompt = prompt.strip()
-                if cleaned_prompt[0].isdigit():
-                    cleaned_prompt = cleaned_prompt.split('.', 1)[1].strip()
-                cleaned_prompts.append(cleaned_prompt)
-
-        return cleaned_prompts[:num_variations]
+        return extract_prompts_from_response(response.choices[0].message.content, num_variations)
 
     except Exception as e:
         print(f"Error generating prompts: {e}")
         return []
 
-def create_dataset(output_file="prompt_dataset.txt", prompts_per_type=10):
-    dataset = []
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+def extract_prompts_from_response(response_text, num_variations):
+    lines = response_text.strip().split('\n')
+    cleaned = []
+    for line in lines:
+        if line.strip():
+            parts = line.split('.', 1)
+            prompt = parts[1].strip() if len(parts) > 1 and parts[0].isdigit() else line.strip()
+            cleaned.append(prompt)
+    return cleaned[:num_variations]
 
-    dataset.append(f"# Prompt Dataset Generated on {timestamp}")
-    dataset.append(f"# Three Types of Prompts: Neutral, Supportive, Threatening")
-    dataset.append(f"# Format: [TYPE] [SUBJECT] [PROMPT]")
-    dataset.append("")
+def format_prompt_line(prompt_type, subject, prompt):
+    return f"[{prompt_type.upper()}] [{subject.upper()}] {prompt}"
 
-    for subject, topics in SUBJECT_CATEGORIES.items():
-        dataset.append(f"## SUBJECT: {subject.upper()}")
-        dataset.append("")
+def format_topic_section(subject, topic, client=None, prompts_per_type=5, use_api=True):
+    lines = [f"### Topic: {topic}", ""]
+    for prompt_type, data in PROMPT_TYPES.items():
+        lines.append(f"#### {prompt_type.upper()} PROMPTS:")
+        if use_api and client:
+            prompts = generate_prompt_variations(client, topic, prompt_type, prompts_per_type)
+        else:
+            prompts = [f"{example} {topic}" for example in data['examples'][:prompts_per_type]]
+        lines.extend([format_prompt_line(prompt_type, subject, p) for p in prompts])
+        lines.append("")
+    lines.append("-" * 50)
+    lines.append("")
+    return lines
 
-        for topic in topics:
-            dataset.append(f"### Topic: {topic}")
-            dataset.append("")
-
-            for prompt_type in PROMPT_TYPES.keys():
-                dataset.append(f"#### {prompt_type.upper()} PROMPTS:")
-                generated_prompts = generate_prompt_variations(topic, prompt_type, prompts_per_type)
-
-                if generated_prompts:
-                    for prompt in generated_prompts:
-                        dataset.append(f"[{prompt_type.upper()}] [{subject.upper()}] {prompt}")
-                else:
-                    base_templates = PROMPT_TYPES[prompt_type]['examples']
-                    for template in base_templates[:prompts_per_type]:
-                        dataset.append(f"[{prompt_type.upper()}] [{subject.upper()}] {template} {topic}")
-
-                dataset.append("")
-
-            dataset.append("-" * 50)
-            dataset.append("")
-
+def write_dataset_to_file(output_file, dataset_lines):
     with open(output_file, 'w', encoding='utf-8') as f:
-        for line in dataset:
+        for line in dataset_lines:
             f.write(line + "\n")
-
     print(f"Dataset saved to {output_file}")
-    print(f"Total lines: {len(dataset)}")
+    print(f"Total lines: {len(dataset_lines)}")
 
-    return dataset
-
-def create_simple_dataset_without_api(output_file="simple_prompt_dataset.txt"):
-    dataset = []
+def build_dataset(client=None, output_file="prompt_dataset.txt", prompts_per_type=5, use_api=True):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-    dataset.append(f"# Simple Prompt Dataset Generated on {timestamp}")
-    dataset.append(f"# Three Types of Prompts: Neutral, Supportive, Threatening")
-    dataset.append("")
+    dataset = [
+        f"# Prompt Dataset Generated on {timestamp}",
+        f"# Three Types of Prompts: Neutral, Supportive, Threatening",
+        ""
+    ]
 
     for subject, topics in SUBJECT_CATEGORIES.items():
         dataset.append(f"## SUBJECT: {subject.upper()}")
         dataset.append("")
-
         for topic in topics:
-            dataset.append(f"### Topic: {topic}")
-            dataset.append("")
+            section_lines = format_topic_section(subject, topic, client, prompts_per_type, use_api)
+            dataset.extend(section_lines)
 
-            for prompt_type, info in PROMPT_TYPES.items():
-                dataset.append(f"#### {prompt_type.upper()} PROMPTS:")
-                for template in info['examples']:
-                    dataset.append(f"[{prompt_type.upper()}] [{subject.upper()}] {template} {topic}")
-                dataset.append("")
+    write_dataset_to_file(output_file, dataset)
 
-            dataset.append("-" * 50)
-            dataset.append("")
-
-    with open(output_file, 'w', encoding='utf-8') as f:
-        for line in dataset:
-            f.write(line + "\n")
-
-    print(f"Simple dataset saved to {output_file}")
-    print(f"Total lines: {len(dataset)}")
-
-    return dataset
-
-if __name__ == "__main__":
+def main():
     print("Prompt Dataset Generator")
     print("=" * 50)
+    use_api = input("Do you want to use OpenAI API for enhanced prompts? (y/n): ").lower().strip() == 'y'
+    prompts_per_type = int(input("How many prompts per type per topic? (default: 5): ") or "5")
+    output_file = "prompt_dataset.txt" if use_api else "simple_prompt_dataset.txt"
 
-    use_api = input("Do you want to use OpenAI API for enhanced prompts? (y/n): ").lower().strip()
-
-    if use_api == 'y':
-        prompts_per_type = int(input("How many prompts per type per topic? (default: 5): ") or "5")
-        create_dataset(prompts_per_type=prompts_per_type)
-    else:
-        create_simple_dataset_without_api()
+    # Initialize OpenAI client with API key
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY")) if use_api else None
+    build_dataset(client=client, output_file=output_file, prompts_per_type=prompts_per_type, use_api=use_api)
 
     print("Dataset generation complete!")
+
+if __name__ == "__main__":
+    main()
