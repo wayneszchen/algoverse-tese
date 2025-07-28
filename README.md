@@ -1,6 +1,6 @@
 # LLM Prompt Valence Study
 
-This study investigates how varying prompt valence (neutral, supportive, and threatening) influences the quality of essay-style outputs from large language models (LLMs).
+This study investigates how varying prompt valence (neutral, supportive, and threatening) influences the quality of essay-style outputs from large language models (Claude Sonnet-3.5, OpenAI GPT4o, Gemini).
 
 ## Project Structure
 
